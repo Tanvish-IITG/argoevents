@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: container-set-
+  
+spec:
+  
+  entrypoint: main
+  templates:
+    - name: main
+      volumes:
+        - name: workspace
+          emptyDir: { }
+      containerSet:
+        volumeMounts:
+          - mountPath: /workspace
+            name: workspace
+        containers:
+          - name: a
+            image: alpine:latest
+            command: [sh,-c]
+            args: ["echo hello from a"]
+          - name: b
+            image: alpine:latest
+            command: [sh,-c]
+            args: ["echo hello from a"]
+          - name: main
+            image: alpine:latest
+            command: [sh,-c]
+            args: ["echo hello from a"]
+            dependencies:
+              - a
+              - b
+      
