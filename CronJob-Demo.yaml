@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: webhook
+spec:
+  template:
+    serviceAccountName: operate-workflow-sa
+  dependencies:
+    - name: test-dep
+      eventSourceName: webhook
+      eventName: example
+  triggers:
+    - template:
+        name: webhook-workflow-trigger
+        k8s:
+          group: argoproj.io
+          version: v1alpha1
+          resource: cronworkflows
+          operation: create
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: CronWorkflow
+              metadata:
+                name: test-cron-wf
+              spec:
+                schedule: "* * * * *"
+                concurrencyPolicy: "Replace"
+                startingDeadlineSeconds: 0
+                workflowSpec:
+                  entrypoint: whalesay
+                  templates:
+                  - name: whalesay
+                    container:
+                      image: alpine:3.6
+                      command: [sh, -c]
+                      args: ["date; sleep 90"]
+          parameters:
+            - src:
+                dependencyName: test-dep
+                dataTemplate: "{{ .Input.body.message | title }}"
+                value: wow! a default value again.
+              dest: spec.arguments.parameters.0.value
+            - src:
+                dependencyName: test-dep
+                dataTemplate: "{{ .Input.body.time | title }}"
+                value: wow! a default value again.
+              dest: spec.arguments.parameters.1.value
+                
+                

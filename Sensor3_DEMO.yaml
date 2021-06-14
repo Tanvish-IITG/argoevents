@@ -1,0 +1,54 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: webhook
+spec:
+  template:
+    serviceAccountName: operate-workflow-sa
+  dependencies:
+    - name: test-dep
+      eventSourceName: webhook
+      eventName: example
+  triggers:
+    - template:
+        name: webhook-workflow-trigger
+        k8s:
+          group: argoproj.io
+          version: v1alpha1
+          resource: workflows
+          operation: create
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: webhook-
+              spec:
+                entrypoint: whalesay
+                arguments:
+                  parameters:
+                    - name: message
+                    - name: time
+                templates:
+                  - name: whalesay
+                    inputs:
+                      parameters:
+                        - name: message
+                        - name: time
+                    container:
+                      image: ubuntu:latest
+                      command: [bin/sh,-c]
+                      args: ["echo {{inputs.parameters.message}}; sleep {{inputs.parameters.time}}; echo terminating"]
+          parameters:
+            - src:
+                dependencyName: test-dep
+                dataTemplate: "{{ .Input.body.message | title }}"
+                value: wow! a default value again.
+              dest: spec.arguments.parameters.0.value
+            - src:
+                dependencyName: test-dep
+                dataTemplate: "{{ .Input.body.time | title }}"
+                value: wow! a default value again.
+              dest: spec.arguments.parameters.1.value
+                
+                
