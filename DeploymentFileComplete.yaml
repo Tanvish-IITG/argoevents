@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: argo
+  name: java-user
 
 ---
 
@@ -150,4 +150,5 @@ spec:
           ports:
             - name: web
               containerPort: 8086
+       serviceAccountName: java-user
          
